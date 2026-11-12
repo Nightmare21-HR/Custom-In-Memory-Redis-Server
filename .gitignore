@@ -11,3 +11,9 @@ dump.my_rdb
 # OS files
 .DS_Store
 
+.envstress_tester.py
+stress_tester.py
+stress_tester.py
+stress_tester.py
+stress_tester.py
+stress_tester.py
