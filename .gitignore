@@ -1,0 +1,13 @@
+# Build artifacts
+build/
+my_redis_server
+*.o
+*.out
+
+# Database dumps
+dump.my_rdb
+*.rdb
+
+# OS files
+.DS_Store
+
