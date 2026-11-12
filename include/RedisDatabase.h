@@ -5,6 +5,7 @@
 #include<unordered_map>
 #include<vector>
 #include<chrono>
+#include<shared_mutex>
 class RedisDatabase{
 public:
 // get the singleton instance
@@ -51,7 +52,7 @@ RedisDatabase() =default;
 ~RedisDatabase()=default;
 RedisDatabase(const RedisDatabase&)=delete;
 RedisDatabase& operator=(const RedisDatabase&)=delete;
-std::mutex db_mutex;
+mutable std::shared_mutex db_mutex;
 std::unordered_map<std::string,std::string> kv_store ;
 std::unordered_map<std::string,std::vector<std::string>> list_store ;
 std::unordered_map<std::string,std::unordered_map<std::string,std::string >> hash_store ;
@@ -60,4 +61,4 @@ std::unordered_map<std::string,std::chrono::steady_clock::time_point>expiry_map;
 
 };
 
-#endif;
+#endif

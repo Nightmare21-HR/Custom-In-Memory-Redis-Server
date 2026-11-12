@@ -2,7 +2,7 @@
 #include<mutex>
 #include<fstream>
 #include<sstream>
-
+#include<shared_mutex>
 #include<algorithm>
 
 RedisDatabase& RedisDatabase::getInstance(){
@@ -14,7 +14,7 @@ RedisDatabase& RedisDatabase::getInstance(){
 
 // List Operation
 std::vector<std::string> RedisDatabase::lget(const std::string&key){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::shared_lock<std::shared_mutex> lock(db_mutex);
     auto it=list_store.find(key);
     if(it!=list_store.end()){
         return it->second;
@@ -23,7 +23,8 @@ std::vector<std::string> RedisDatabase::lget(const std::string&key){
 }
 
 ssize_t RedisDatabase::llen(const std::string&key){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     auto it=list_store.find(key);
     if(it!=list_store.end()){
         return it->second.size();
@@ -32,17 +33,18 @@ ssize_t RedisDatabase::llen(const std::string&key){
 
 }
 void RedisDatabase::lpush(const std::string&key,const std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     list_store[key].insert(list_store[key].begin(),value);
 }
 void RedisDatabase::rpush(const std::string&key,const std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
+
 
     list_store[key].push_back(value);
 
 }
 bool RedisDatabase::lpop(const std::string&key, std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
 
     list_store[key].insert(list_store[key].begin(),value);
     auto  it=list_store.find(key);
@@ -54,7 +56,7 @@ bool RedisDatabase::lpop(const std::string&key, std::string&value){
     return false;
 }
 bool RedisDatabase::rpop(const std::string&key, std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     list_store[key].insert(list_store[key].begin(),value);
     auto  it=list_store.find(key);
     if(it!=list_store.end() && !it->second.empty()){
@@ -67,7 +69,7 @@ bool RedisDatabase::rpop(const std::string&key, std::string&value){
 
 }
 int RedisDatabase::lrem(const std::string&key,int count,const std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     int removed=0;
     auto it=list_store.find(key);
     if(it==list_store.end()) return 0;
@@ -113,7 +115,8 @@ int RedisDatabase::lrem(const std::string&key,int count,const std::string&value)
     return removed;
 }
 bool RedisDatabase::lindex(const std::string&key,int index, std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     auto it=list_store.find(key);
     if(it==list_store.end()) return false;
     const auto&lst=it->second;
@@ -128,7 +131,7 @@ bool RedisDatabase::lindex(const std::string&key,int index, std::string&value){
 
 }
 bool RedisDatabase::lset(const std::string&key,int index,const std::string&value){
-     std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     auto it=list_store.find(key); 
     if(it==list_store.end()) return false;
      auto&lst=it->second;
@@ -158,12 +161,13 @@ H=Hash
 */
 // hash
 bool RedisDatabase::hset(const std::string&key,const std::string&field,const std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     hash_store[key][field]=value;
     return true;
 }
 bool RedisDatabase::hget(const std::string&key,const std::string&field, std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     auto it=hash_store.find(key);
     if(it!=hash_store.end()){
         auto f=it->second.find(field);
@@ -176,7 +180,8 @@ bool RedisDatabase::hget(const std::string&key,const std::string&field, std::str
 
 }
 bool RedisDatabase::hexist(const std::string&key,const std::string&field){
-    std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     auto it=hash_store.find(key);
     if(it!=hash_store.end()){
         return it->second.find(field)!=it->second.end();
@@ -185,7 +190,7 @@ bool RedisDatabase::hexist(const std::string&key,const std::string&field){
 
 }
 bool RedisDatabase::hdel(const std::string&key,const std::string&field){
-    std::lock_guard<std::mutex> lock(db_mutex);
+   std::unique_lock<std::shared_mutex> lock(db_mutex);
     auto it=hash_store.find(key);
     if(it!=hash_store.end()){
         return it->second.erase(field)>0;
@@ -194,7 +199,8 @@ bool RedisDatabase::hdel(const std::string&key,const std::string&field){
 
 }
 std::unordered_map<std::string,std::string> RedisDatabase::hgetall(const std::string&key){
-    std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     if(hash_store.find(key)!=hash_store.end()){
         return hash_store[key];
     }
@@ -203,7 +209,8 @@ std::unordered_map<std::string,std::string> RedisDatabase::hgetall(const std::st
 
 }
 std::vector<std::string>RedisDatabase::hkeys(const std::string&key){
-    std::lock_guard<std::mutex> lock(db_mutex);
+       std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     std::vector<std::string>fields;
     auto it=hash_store.find(key);
     if(it!=hash_store.end()){
@@ -216,7 +223,8 @@ std::vector<std::string>RedisDatabase::hkeys(const std::string&key){
 
 }
 std::vector<std::string>RedisDatabase::hvals(const std::string&key){
-    std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     std::vector<std::string>vals;
     auto it=hash_store.find(key);
     if(it!=hash_store.end()){
@@ -229,14 +237,15 @@ std::vector<std::string>RedisDatabase::hvals(const std::string&key){
 
 }
 ssize_t RedisDatabase::hlen(const std::string&key){
-    std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     auto it=hash_store.find(key);
     return (it!=hash_store.end())?it->second.size():0;
 
 
 }
 bool RedisDatabase::hmset(const std::string&key,const std::vector<std::pair<std::string,std::string>>&fieldValues){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     for(const auto&pairs:fieldValues){
         hash_store[key][pairs.first]=pairs.second;
 
@@ -247,19 +256,27 @@ bool RedisDatabase::hmset(const std::string&key,const std::vector<std::pair<std:
 
 ///
 bool RedisDatabase::flushAll(){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     kv_store.clear();
     list_store.clear();
     hash_store.clear();
     return true;
 }
 void RedisDatabase::set(const std::string&key, const std::string&value){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     kv_store[key]=value;
 }
 bool RedisDatabase::get(const std::string&key ,std::string&value ){
-        std::lock_guard<std::mutex> lock(db_mutex);
-        purgedExpired();
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+        auto exp_it=expiry_map.find
+        (key);
+        if(exp_it!=expiry_map.end() && std::chrono::steady_clock::now()>exp_it->second){
+            kv_store.erase(key);
+            list_store.erase(key);
+            hash_store.erase(key);
+            expiry_map.erase(exp_it);
+            return false;
+        }
         auto it=kv_store.find(key);
         if(it!=kv_store.end()){
             value=it->second;
@@ -268,7 +285,8 @@ bool RedisDatabase::get(const std::string&key ,std::string&value ){
         return false;
 }
 std::vector<std::string> RedisDatabase::keys(){
-        std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
         purgedExpired();
         std::vector<std::string> result;
         for(const auto&pair :kv_store){
@@ -285,7 +303,8 @@ std::vector<std::string> RedisDatabase::keys(){
 
 }
 std::string RedisDatabase::type(const std::string&key ){
-        std::lock_guard<std::mutex> lock(db_mutex);
+            std::shared_lock<std::shared_mutex> lock(db_mutex);
+
         if(kv_store.find(key)!=kv_store.end()){
             return "string";
         }
@@ -298,7 +317,7 @@ std::string RedisDatabase::type(const std::string&key ){
         else return "none";
 }
 bool RedisDatabase::del(const std::string&key){
-        std::lock_guard<std::mutex> lock(db_mutex);
+        std::unique_lock<std::shared_mutex> lock(db_mutex);
         purgedExpired();
         bool erased=false;
         erased|=kv_store.erase(key)>0;
@@ -309,7 +328,7 @@ bool RedisDatabase::del(const std::string&key){
 }
 // expire
 bool RedisDatabase::expire(const std::string&key,int seconds ){
-        std::lock_guard<std::mutex> lock(db_mutex);
+        std::unique_lock<std::shared_mutex> lock(db_mutex);
         purgedExpired();
         bool exist=(kv_store.find(key)!=kv_store.end()) || (list_store.find(key)!=list_store.end()) ||(hash_store.find(key)!=hash_store.end()) ;
         if(!exist) return false;
@@ -338,7 +357,7 @@ void RedisDatabase::purgedExpired(){
 }
 // rename
 bool RedisDatabase::rename(const std::string&oldKey,const std::string&newKey){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     purgedExpired();
     bool found=false;
     auto itkv=kv_store.find(oldKey);
@@ -368,7 +387,8 @@ bool RedisDatabase::rename(const std::string&oldKey,const std::string&newKey){
     return found;
 }
 bool RedisDatabase::dump(const std::string&filename){
-    std::lock_guard<std::mutex> lock(db_mutex);
+        std::shared_lock<std::shared_mutex> lock(db_mutex);
+
     std::ofstream ofs(filename,std::ios::binary);
     if(!ofs) return false;
 
@@ -394,7 +414,7 @@ bool RedisDatabase::dump(const std::string&filename){
 return true;
 }
 bool RedisDatabase::load(const std::string&filename){
-    std::lock_guard<std::mutex> lock(db_mutex);
+    std::unique_lock<std::shared_mutex> lock(db_mutex);
     std::ifstream ifs(filename,std::ios::binary);
     if(!ifs) return false;
     kv_store.clear();
@@ -408,10 +428,15 @@ bool RedisDatabase::load(const std::string&filename){
         iss>>type;
         if(type=='K'){
             std::string key,value;
-            iss>>key>>value;
+            iss>>key;
+            std::getline(iss,value);
+            if(!value.empty() && value[0]==' '){
+                value=value.substr(1);
+            }
             kv_store[key]=value;
 
-        }else if(type=='L'){
+        }
+        else if(type=='L'){
             std::string key;
             iss>>key;
             std::string item;

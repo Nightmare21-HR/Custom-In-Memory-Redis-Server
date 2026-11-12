@@ -75,7 +75,7 @@ void RedisServer::run(){
                 break;
             }
         }
-        threads.emplace_back([client_socket,&cmdHandler](){
+        std::thread([client_socket,&cmdHandler](){
             char buffer[1024];
             while(true){
                 memset(buffer,0,sizeof(buffer));
@@ -86,7 +86,7 @@ void RedisServer::run(){
                 send(client_socket,response.c_str(),response.size(),0);
             }
             close(client_socket);
-        });
+        }).detach();
     }
     for(auto &t:threads){
         if(t.joinable()) t.join();
