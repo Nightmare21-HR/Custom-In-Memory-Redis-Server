@@ -46,7 +46,7 @@ void RedisDatabase::rpush(const std::string&key,const std::string&value){
 bool RedisDatabase::lpop(const std::string&key, std::string&value){
     std::unique_lock<std::shared_mutex> lock(db_mutex);
 
-    list_store[key].insert(list_store[key].begin(),value);
+   
     auto  it=list_store.find(key);
     if(it!=list_store.end() && !it->second.empty()){
         value=it->second.front();
@@ -57,7 +57,7 @@ bool RedisDatabase::lpop(const std::string&key, std::string&value){
 }
 bool RedisDatabase::rpop(const std::string&key, std::string&value){
     std::unique_lock<std::shared_mutex> lock(db_mutex);
-    list_store[key].insert(list_store[key].begin(),value);
+
     auto  it=list_store.find(key);
     if(it!=list_store.end() && !it->second.empty()){
         value=it->second.back();

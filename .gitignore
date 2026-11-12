@@ -18,3 +18,5 @@ stress_tester.py
 stress_tester.py
 stress_tester.py
 .env
+*.log
+functional_test.py

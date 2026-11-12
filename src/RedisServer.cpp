@@ -60,7 +60,7 @@ void RedisServer::run(){
     if(bind(server_socket,(struct sockaddr*)&serverAddr,sizeof(serverAddr))<0){
         std::cerr<<"Error Binding sever socket\n";
     }
-    if(listen(server_socket,10)<0){
+    if(listen(server_socket,SOMAXCONN)<0){
         std::cerr<<"Error Listening\n";
     
     }
